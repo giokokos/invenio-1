@@ -17,7 +17,9 @@
 ## along with Invenio; if not, write to the Free Software Foundation, Inc.,
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-""" API to fetch metadata in MARCXML format from crossref site using DOI """
+"""
+API to fetch metadata in MARCXML and JSON formats from crossref site using DOI
+"""
 
 import sys
 import urllib
@@ -25,6 +27,8 @@ import urllib2
 import datetime
 from xml.dom.minidom import parse
 from time import sleep
+import requests
+from lxml.etree import fromstring
 
 from invenio.config import CFG_ETCDIR, CFG_CROSSREF_USERNAME, \
  CFG_CROSSREF_PASSWORD, CFG_CROSSREF_EMAIL
@@ -32,6 +36,9 @@ from invenio.legacy.bibconvert.xslt_engine import convert
 from invenio.legacy.bibrecord import record_get_field_value
 from invenio.utils.url import make_invenio_opener
 from invenio.utils.json import json, json_unicode_to_utf8
+from invenio.base.globals import cfg
+from invenio.legacy.bibconvert.registry import templates
+from invenio.utils.xmlhelpers import etree_to_dict
 
 CROSSREF_OPENER = make_invenio_opener('crossrefutils')
 
@@ -41,39 +48,43 @@ FIELDS_BOOK = ('isbn,ser_title,vol_title,author,volume,edition_number,'
 
 # Exceptions classes
 class CrossrefError(Exception):
-    """Crossref errors"""
+
+    """ Crossref errors. """
+
     def __init__(self, code):
-        """Initialisation"""
+        """ Initialisation. """
         self.code = code
 
     def __str__(self):
-        """Returns error code"""
+        """ Return error code. """
         return repr(self.code)
+
 
 def get_marcxml_for_doi(doi):
     """
     Send doi to the http://www.crossref.org/openurl page.
-    Attaches parameters: username, password, doi and noredirect.
+
+    Attaches parameters: email, doi and redirect.
     Returns the MARCXML code or throws an exception, when
     1. DOI is malformed
     2. Record not found
     """
-    if not CFG_CROSSREF_USERNAME and not CFG_CROSSREF_PASSWORD:
+    if cfg.get('DEPOSIT_CROSSREF_EMAIL') is None:
         raise CrossrefError("error_crossref_no_account")
 
     # Clean the DOI
     doi = doi.strip()
 
     # Getting the data from external source
-    url = "http://www.crossref.org/openurl/?pid=" +  CFG_CROSSREF_USERNAME \
-        + ":" + CFG_CROSSREF_PASSWORD + "&noredirect=tru&id=doi:" + doi
-    request = urllib2.Request(url)
-    response = CROSSREF_OPENER.open(request)
-    header = response.info().getheader('Content-Type')
-    content = response.read()
+    response = requests.get("http://www.crossref.org/openurl/",
+                            params=dict(pid=cfg.get('DEPOSIT_CROSSREF_EMAIL'),
+                                        redirect=False,
+                                        id=doi)
+                            )
+    content = response.content
 
     # Check if the returned page is html - this means the DOI is malformed
-    if "text/html" in header:
+    if "text/html" in response.headers['content-type']:
         raise CrossrefError("error_crossref_malformed_doi")
     if 'status="unresolved"' in content:
         raise CrossrefError("error_crossref_record_not_found")
@@ -83,8 +94,8 @@ def get_marcxml_for_doi(doi):
     # Seting the path to xsl template
     xsl_crossref2marc_config = templates.get('crossref2marcxml.xsl', '')
 
-    output = convert(xmltext=content, \
-                    template_filename=xsl_crossref2marc_config)
+    output = convert(xmltext=content,
+                     template_filename=xsl_crossref2marc_config)
     return output
 
 def get_doi_for_records(records):
@@ -239,3 +250,41 @@ def query_fundref_api(query, **kwargs):
     req = urllib2.Request("http://api.crossref.org%s?%s" % (query, urllib.urlencode(kwargs)), headers={'content-type': 'application/vnd.crossref-api-message+json; version=1.0'})
     res = json_unicode_to_utf8(json.load(CROSSREF_OPENER.open(req)))
     return res['message']
+
+def get_json_for_doi(doi):
+    """ Send doi to crossref API to gather content to autofill form fields. """
+    if cfg.get('DEPOSIT_CROSSREF_EMAIL') is None:
+        raise CrossrefError("error_crossref_no_account")
+
+    # Clean the DOI
+    doi = doi.strip()
+
+    response = requests.get("http://www.crossref.org/openurl/",
+                            params=dict(pid=cfg.get('DEPOSIT_CROSSREF_EMAIL'),
+                                        redirect=False,
+                                        id=doi)
+                            )
+    content = response.content
+
+    query = {}
+    # Check if the returned page is html - this means the DOI is malformed
+    if "text/html" in response.headers['content-type']:
+        data = {}
+        query['status'] = 'malformed'
+    else:
+        data = etree_to_dict(fromstring(content))
+
+        # Check if status="unresolved" - this means the DOI was not found
+        if 'status="unresolved"' in content:
+            query['status'] = 'notfound'
+        else:
+            query['status'] = 'success'
+            for d in data['crossref_result'][0]['query_result'][1]['body'][0]['query']:
+                query.update(dict(d.items()))
+
+        del data['crossref_result']
+
+    data['source'] = 'crossref'
+    data['query'] = query
+
+    return data
