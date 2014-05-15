@@ -433,7 +433,10 @@ def prepare_sip():
 
 
 def process_sip_metadata(processor=None):
-    """Process metadata in submission information package using a custom processor."""
+    """Process metadata in submission information package.
+
+    :param processor: custom processor
+    """
     def _process_sip(obj, dummy_eng):
         d = Deposition(obj)
         metadata = d.get_latest_sip(sealed=False).metadata
