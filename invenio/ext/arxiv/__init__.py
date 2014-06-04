@@ -65,7 +65,7 @@ class Arxiv(object):
     def init_app(self, app):
         """Initialize a Flask application."""
         app.config.setdefault("ARXIV_API_URL",
-                              "https://export.arxiv.org/api/query")
+                              "http://export.arxiv.org/api/query")
         app.config.setdefault("ARXIV_ENDPOINT", "_arxiv.search")
         app.config.setdefault("ARXIV_URL_RULE", "/arxiv/search")
 
@@ -86,7 +86,7 @@ class Arxiv(object):
         response = requests.get(
             current_app.config["ARXIV_API_URL"],
             params=dict(
-                search_query="all:{term}".format(term=arxiv_id.strip()),
+                search_query="{term}".format(term=arxiv_id.strip()),
                 max_results=max_results
             ),
         )
