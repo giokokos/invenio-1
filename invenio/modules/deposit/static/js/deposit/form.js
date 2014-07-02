@@ -1387,6 +1387,7 @@ var DEPOSIT_FORM = (function( $ ){
               var sortable_options = {
                   items: "." + options.element_css_class,
                   update: sort_element,
+                  axis: "y"
               };
 
               if($(item).find("."+options.sort_cssclass).length !== 0){
