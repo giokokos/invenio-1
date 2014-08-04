@@ -83,7 +83,7 @@ styles = Bundle(
     "less/user-menu.less",
     "less/sticky-footer.less",
     "less/footer.less",
-    output="invenio.css",
+    output="base.css",
     depends=[
         "less/base.less",
         "less/base/**/*.less"

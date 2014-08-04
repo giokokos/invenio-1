@@ -38,7 +38,7 @@ class BundleExtension(Extension):
 
     .. code-block:: jinja
 
-        {%- bundles "jquery.js", "invenio.css" -%}
+        {%- bundles "jquery.js", "base.css" -%}
         {%- bundle "require.js" -%}
 
     Usage.
