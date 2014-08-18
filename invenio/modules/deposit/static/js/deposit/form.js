@@ -311,7 +311,7 @@ define(function(require, exports, module) {
           $('#file-table').show('fast');
       } else {
           clear_error(name);
-          has_ckeditor = $('[name=' + name + ']').data('ckeditor');
+          var has_ckeditor = $('[name=' + name + ']').data('ckeditor');
           if( has_ckeditor === 1) {
               if(CKEDITOR.instances[name].getData(value) != value) {
                   CKEDITOR.instances[name].setData(value);
