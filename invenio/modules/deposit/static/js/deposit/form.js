@@ -394,7 +394,9 @@ define(function(require, exports, module) {
    * Save field value value
    */
   function save_field(url, name, value) {
-      save_data(url, {name: value})
+      var request_data = {};
+      request_data[name] = value;
+      save_data(url, request_data);
   }
   /**
    * Save field value value
