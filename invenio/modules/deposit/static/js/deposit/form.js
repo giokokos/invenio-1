@@ -1139,25 +1139,30 @@ define(function(require, exports, module) {
       });
   }
 
-  module.exports = function(config){
-    init_plupload(config.plupload);
-    init_save(config.urls.save_all_url, '.form-save', '#submitForm');
-    init_submit(config.urls.complete_url, '.form-submit', '#submitForm', '#form-submit-dialog');
-    init_inputs('#submitForm input, #submitForm textarea, #submitForm select', config.urls.save_url);
-    init_buttons('#submitForm .form-button', config.urls.save_url);
-    init_autocomplete('[data-autocomplete="1"]', config.urls.save_url, config.urls.autocomplete_url);
-    init_field_lists('#submitForm .dynamic-field-list', config.urls.save_url, '[data-autocomplete="1"]', config.urls.autocomplete_url);
-    init_ckeditor('#submitForm textarea[data-ckeditor="1"]', config.urls.save_url);
-    // Initialize rest of jquery plugins
-    // Fix issue with typeahead.js drop-down partly cut-off due to overflow ???
-    $('#webdeposit_form_accordion').on('hide', function (e) {
-      $(e.target).css("overflow","hidden");
-    })
-    $('#webdeposit_form_accordion').on('shown', function (e) {
-      $(e.target).css("overflow", "visible");
-    })
-    $('#webdeposit_form_accordion .panel-collapse.in.collapse').css("overflow", "visible");
-    // Initialize jquery_plugins
-    $(config.datepicker.element).datepicker({dateFormat: config.datepicker.format});
+  module.exports = {
+    init: function(config){
+      init_plupload(config.plupload);
+      init_save(config.urls.save_all_url, '.form-save', '#submitForm');
+      init_submit(config.urls.complete_url, '.form-submit', '#submitForm', '#form-submit-dialog');
+      init_inputs('#submitForm input, #submitForm textarea, #submitForm select', config.urls.save_url);
+      init_buttons('#submitForm .form-button', config.urls.save_url);
+      init_autocomplete('[data-autocomplete="1"]', config.urls.save_url, config.urls.autocomplete_url);
+      init_field_lists('#submitForm .dynamic-field-list', config.urls.save_url, '[data-autocomplete="1"]', config.urls.autocomplete_url);
+      init_ckeditor('#submitForm textarea[data-ckeditor="1"]', config.urls.save_url);
+      // Initialize rest of jquery plugins
+      // Fix issue with typeahead.js drop-down partly cut-off due to overflow ???
+      $('#webdeposit_form_accordion').on('hide', function (e) {
+        $(e.target).css("overflow","hidden");
+      })
+      $('#webdeposit_form_accordion').on('shown', function (e) {
+        $(e.target).css("overflow", "visible");
+      })
+      $('#webdeposit_form_accordion .panel-collapse.in.collapse').css("overflow", "visible");
+      // Initialize jquery_plugins
+      $(config.datepicker.element).datepicker({dateFormat: config.datepicker.format});
+  },
+    save_field: save_field,
+    handle_field_msg: handle_field_msg
   }
+
 })
