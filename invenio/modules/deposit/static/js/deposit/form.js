@@ -1157,7 +1157,6 @@ define(function(require, exports, module) {
       $('#webdeposit_form_accordion').on('shown', function (e) {
         $(e.target).css("overflow", "visible");
       })
-      $('#webdeposit_form_accordion .panel-collapse.in.collapse').css("overflow", "visible");
       // Initialize jquery_plugins
       $(config.datepicker.element).datepicker({dateFormat: config.datepicker.format});
   },
